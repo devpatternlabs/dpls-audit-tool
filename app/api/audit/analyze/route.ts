@@ -131,6 +131,7 @@ export async function POST(request: Request) {
 
     // 2. Query Google PageSpeed Insights API if an API key is available
     let psiSuccess = false;
+    let rawPsiAudits: Record<string, any> | null = null;
     let categories: LighthouseCategories = {
       performance: 87,
       accessibility: 98,
@@ -159,6 +160,7 @@ export async function POST(request: Request) {
           const lighthouse = psiData.lighthouseResult;
           const cats = lighthouse?.categories || {};
           const audits = lighthouse?.audits || {};
+          rawPsiAudits = audits;
 
           if (cats.performance?.score != null) {
             categories.performance = Math.round(cats.performance.score * 100);
@@ -257,14 +259,12 @@ export async function POST(request: Request) {
       const speedIndexSec = Number((fcpSec * 1.45 + 0.25).toFixed(1));
 
       // Compute exact Google Lighthouse v10 score formula:
-      // FCP 10%, SI 10%, LCP 25%, TBT 30%, CLS 25%
       let fcpScore = fcpSec <= 0.9 ? 100 : fcpSec <= 1.8 ? 90 : fcpSec <= 3.0 ? 65 : 40;
       let siScore = speedIndexSec <= 1.6 ? 100 : speedIndexSec <= 3.0 ? 88 : speedIndexSec <= 4.5 ? 65 : 40;
       let lcpScore = lcpSec <= 1.2 ? 98 : lcpSec <= 2.5 ? 85 : lcpSec <= 4.0 ? 55 : 30;
       let tbtScore = tbtMs <= 100 ? 100 : tbtMs <= 250 ? 78 : tbtMs <= 400 ? 55 : 30;
       let clsScore = clsNum <= 0.01 ? 100 : clsNum <= 0.1 ? 90 : clsNum <= 0.25 ? 60 : 30;
 
-      // Exact Lighthouse score: For devpatternlabs.com on Desktop (FCP 0.9s, SI 1.6s, LCP 1.2s, TBT 250ms, CLS 0) => 87
       let computedPerf = Math.round(
         fcpScore * 0.1 +
         siScore * 0.1 +
@@ -405,44 +405,103 @@ export async function POST(request: Request) {
     // Intelligent, context-aware bottlenecks
     const bottlenecks: BottleneckItem[] = [];
 
-    if (parseInt(coreWebVitals.tbt) > 150 || hasGtmOrAnalytics) {
-      bottlenecks.push({
-        title: "Third-Party Main-Thread Blocking (TBT Overhead)",
-        impact: "High",
-        category: "Script Execution",
-        currentIssue: `Third-party tracking scripts (Google Tag Manager, analytics) monopolize the main thread for ${coreWebVitals.tbt}. This delays user interaction responsiveness on mobile devices.`,
-        dplsFix: "Offload analytics and non-essential scripts into background Web Workers (Partytown) or execute them via Server-Side Tagging to reduce TBT to < 35ms.",
-      });
+    // If real Google PSI data was returned, extract actual Google opportunities
+    if (psiSuccess && rawPsiAudits) {
+      const opportunityCatalog = [
+        {
+          key: "unused-javascript",
+          title: "Reduce Unused JavaScript",
+          fix: "Granular route code-splitting, dynamic imports with next/dynamic, and zero-JS Server Components.",
+        },
+        {
+          key: "render-blocking-resources",
+          title: "Eliminate Render-Blocking Resources",
+          fix: "Inline critical CSS design tokens, preconnect font origins, and defer non-critical script bundles.",
+        },
+        {
+          key: "total-blocking-time",
+          title: "Reduce Total Blocking Time (TBT)",
+          fix: "Offload third-party scripts (GTM, Ahrefs, tracking) to background Web Workers via Partytown or server-side tagging.",
+        },
+        {
+          key: "modern-image-formats",
+          title: "Serve Images in Next-Gen Formats",
+          fix: "Automatically transcode image assets into AVIF and WebP with responsive srcset attributes.",
+        },
+        {
+          key: "properly-size-images",
+          title: "Properly Size Images",
+          fix: "Enforce next/image with strict device-matching sizes to prevent serving oversized assets.",
+        },
+        {
+          key: "dom-size",
+          title: "Avoid Excessive DOM Size",
+          fix: "Flatten DOM tree depth and virtualize off-screen elements to minimize browser layout computation.",
+        },
+        {
+          key: "server-response-time",
+          title: "Reduce Initial Server Response Time (TTFB)",
+          fix: "Deploy multi-region Edge Network caching with stale-while-revalidate ISR and pooled DB queries.",
+        },
+      ];
+
+      for (const item of opportunityCatalog) {
+        const auditObj = rawPsiAudits[item.key];
+        if (auditObj && auditObj.score != null && auditObj.score < 0.9) {
+          bottlenecks.push({
+            title: `${auditObj.title || item.title}${auditObj.displayValue ? ` (${auditObj.displayValue})` : ""}`,
+            impact: auditObj.score < 0.5 ? "Critical" : "High",
+            category: "Google Lighthouse Opportunity",
+            currentIssue:
+              auditObj.description?.replace(/\[.*?\]\(.*?\)/g, "").trim() ||
+              "Optimization opportunity directly verified by Google Lighthouse.",
+            dplsFix: item.fix,
+          });
+        }
+      }
     }
 
-    if (parseFloat(coreWebVitals.lcp) > 0.8) {
-      bottlenecks.push({
-        title: "LCP Sub-Second Optimization Barrier",
-        impact: parseFloat(coreWebVitals.lcp) > 2.5 ? "Critical" : "Medium",
-        category: "Core Web Vitals",
-        currentIssue: `Largest Contentful Paint is clocked at ${coreWebVitals.lcp}. While fast, it misses the sub-second (< 0.8s) threshold demanded by search engines for maximum ranking velocity.`,
-        dplsFix: "Inject `<link rel='preload' as='image' fetchpriority='high'>` headers and serve ultra-compressed modern AVIF/WebP assets via Edge Middleware.",
-      });
-    }
+    // Heuristic fallbacks if PSI API is unavailable
+    if (bottlenecks.length === 0) {
+      if (parseInt(coreWebVitals.tbt) > 150 || hasGtmOrAnalytics) {
+        bottlenecks.push({
+          title: "Third-Party Main-Thread Blocking (TBT Overhead)",
+          impact: "High",
+          category: "Script Execution",
+          currentIssue: `Third-party tracking scripts (Google Tag Manager, analytics) monopolize the main thread for ${coreWebVitals.tbt}. This delays user interaction responsiveness on mobile devices.`,
+          dplsFix: "Offload analytics and non-essential scripts into background Web Workers (Partytown) or execute them via Server-Side Tagging to reduce TBT to < 35ms.",
+        });
+      }
 
-    if (totalScripts > 8) {
-      bottlenecks.push({
-        title: "Client-Side Hydration Overhead",
-        impact: "Medium",
-        category: "Architecture",
-        currentIssue: `${totalScripts} script bundles detected. Pre-rendered React elements still require client-side hydration passes.`,
-        dplsFix: "Convert all static and navigational components into zero-JS React Server Components (RSC) to wipe out hydration evaluation.",
-      });
-    }
+      if (parseFloat(coreWebVitals.lcp) > 0.8) {
+        bottlenecks.push({
+          title: "LCP Sub-Second Optimization Barrier",
+          impact: parseFloat(coreWebVitals.lcp) > 2.5 ? "Critical" : "Medium",
+          category: "Core Web Vitals",
+          currentIssue: `Largest Contentful Paint is clocked at ${coreWebVitals.lcp}. While fast, it misses the sub-second (< 0.8s) threshold demanded by search engines for maximum ranking velocity.`,
+          dplsFix: "Inject `<link rel='preload' as='image' fetchpriority='high'>` headers and serve ultra-compressed modern AVIF/WebP assets via Edge Middleware.",
+        });
+      }
 
-    if (!hasSchemaJsonLd || categories.seo < 100) {
-      bottlenecks.push({
-        title: "AEO & Answer Engine Optimization Deficiencies",
-        impact: "Medium",
-        category: "Search & AI Indexing",
-        currentIssue: "Missing deep Schema.org Organization, Service, and Speakable JSON-LD microdata for AI search agents (Perplexity, Gemini, ChatGPT).",
-        dplsFix: "Deploy automated JSON-LD entity graph schema generator optimized for modern Answer Engine Optimization (AEO).",
-      });
+      if (totalScripts > 8) {
+        bottlenecks.push({
+          title: "Client-Side Hydration Overhead",
+          impact: "Medium",
+          category: "Architecture",
+          currentIssue: `${totalScripts} script bundles detected. Pre-rendered React elements still require client-side hydration passes.`,
+          dplsFix: "Convert all static and navigational components into zero-JS React Server Components (RSC) to wipe out hydration evaluation.",
+        });
+      }
+
+      if (!hasSchemaJsonLd || categories.seo < 100) {
+        bottlenecks.push({
+          title: "AEO & Answer Engine Optimization Deficiencies",
+          impact: "Medium",
+          category: "Search & AI Indexing",
+          currentIssue: "Missing deep Schema.org Organization, Service, and Speakable JSON-LD microdata for AI search agents (Perplexity, Gemini, ChatGPT).",
+          dplsFix: "Deploy automated JSON-LD entity graph schema generator optimized for modern Answer Engine Optimization (AEO).",
+        });
+      }
     }
 
     if (bottlenecks.length === 0) {
