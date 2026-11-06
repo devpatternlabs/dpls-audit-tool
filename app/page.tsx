@@ -25,6 +25,8 @@ import {
   Smartphone,
   Gauge,
   Activity,
+  Star,
+  Rocket,
 } from "lucide-react";
 import ScoreDial from "@/components/ScoreDial";
 import { CALENDLY_URL, BRAND_NAME } from "@/lib/site";
@@ -40,7 +42,8 @@ export default function HomePage() {
   const [auditResult, setAuditResult] = useState<ComparativeAuditResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Lead capture state
+  // 2-Plan Marketing selection & Lead capture state
+  const [selectedPlan, setSelectedPlan] = useState<"sprint" | "retainer">("sprint");
   const [leadForm, setLeadForm] = useState({ name: "", email: "", company: "" });
   const [isCapturing, setIsCapturing] = useState(false);
   const [leadUnlocked, setLeadUnlocked] = useState(false);
@@ -64,7 +67,6 @@ export default function HomePage() {
     setAuditResult(null);
     setLeadUnlocked(false);
 
-    // Step progress timer
     const interval = setInterval(() => {
       setScanStep((prev) => (prev < scanSteps.length - 1 ? prev + 1 : prev));
     }, 1100);
@@ -112,6 +114,7 @@ export default function HomePage() {
           auditId: auditResult.id,
           currentScore: auditResult.overallScoreCurrent,
           bottlenecks: auditResult.bottlenecks,
+          selectedPlan,
         }),
       });
 
@@ -568,23 +571,158 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* 6. 14-DAY ROADMAP & LEAD CAPTURE (PITCH & CLOSE) */}
-            <div id="unlock-blueprint" className="p-6 sm:p-10 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-[#0c1424] border-2 border-emerald-500/40 shadow-2xl relative">
-              <div className="max-w-2xl mx-auto text-center space-y-3 mb-8">
+            {/* ==============================================================
+                6. TWO-TIER MARKETING APPROACH & LEAD CAPTURE
+                ============================================================== */}
+            <div id="unlock-blueprint" className="p-6 sm:p-10 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-[#0c1424] border-2 border-emerald-500/40 shadow-2xl relative space-y-8">
+              <div className="max-w-3xl mx-auto text-center space-y-3">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-mono font-semibold border border-emerald-500/30">
-                  <Lock className="w-3.5 h-3.5" />
-                  <span>Executive Hand-off • 14-Day Sprint Blueprint</span>
+                  <Rocket className="w-3.5 h-3.5" />
+                  <span>Next Step: Select Your Optimization Strategy</span>
                 </div>
                 <h3 className="text-2xl sm:text-3xl font-extrabold text-white">
-                  Unlock the Complete 14-Day Execution Plan &amp; Database Schemas
+                  Two Ways Dev Pattern Labs Can Re-Engineer Your System
                 </h3>
-                <p className="text-slate-300 text-sm">
-                  Enter your work email to receive the complete technical teardown report, API &amp; DB schema migration maps, and an optional 15-minute architecture review with our senior engineers.
+                <p className="text-slate-300 text-sm max-w-xl mx-auto">
+                  Based on your audit findings, choose the engagement model that fits your immediate timeline and business goals:
                 </p>
               </div>
 
+              {/* 2-PLAN MARKETING CARDS (SELECTABLE) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto items-stretch">
+                {/* Plan 1: Simple Tactical Approach (14-Day Sprint) */}
+                <div
+                  onClick={() => setSelectedPlan("sprint")}
+                  className={`cursor-pointer p-6 sm:p-7 rounded-2xl border-2 transition relative flex flex-col justify-between ${
+                    selectedPlan === "sprint"
+                      ? "bg-slate-900 border-sky-400 shadow-xl shadow-sky-500/10 ring-1 ring-sky-400"
+                      : "bg-slate-950/70 border-slate-800 hover:border-slate-700 opacity-80"
+                  }`}
+                >
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="px-2.5 py-1 rounded-md text-[11px] font-mono font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                        Plan 1 • Simple Approach
+                      </span>
+                      <span className="text-xs text-slate-400 font-mono">14 Days Fixed</span>
+                    </div>
+
+                    <div>
+                      <h4 className="text-lg font-bold text-white">14-Day Performance Sprint</h4>
+                      <p className="text-xs text-slate-400 mt-1">
+                        Best for fast, guaranteed Core Web Vitals optimization and immediate speed fixes.
+                      </p>
+                    </div>
+
+                    <div className="text-2xl font-black text-white">
+                      $1,800 <span className="text-xs text-slate-400 font-normal">/ ₹85,000 one-time</span>
+                    </div>
+
+                    <ul className="space-y-2 text-xs text-slate-300 pt-2 border-t border-slate-800">
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-sky-400 flex-shrink-0" />
+                        <span>Eliminate 250ms+ TBT (Third-party script worker offloading)</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-sky-400 flex-shrink-0" />
+                        <span>Sub-second LCP optimization (&lt; 0.8s)</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-sky-400 flex-shrink-0" />
+                        <span>Zero Layout Shifts (CLS: 0.000)</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-sky-400 flex-shrink-0" />
+                        <span>50% SLA Performance Guarantee (95+ Score)</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="pt-5 mt-4 border-t border-slate-800/80">
+                    <span className={`text-xs font-semibold flex items-center gap-1.5 ${selectedPlan === "sprint" ? "text-sky-400" : "text-slate-400"}`}>
+                      <input
+                        type="radio"
+                        name="plan"
+                        checked={selectedPlan === "sprint"}
+                        onChange={() => setSelectedPlan("sprint")}
+                        className="accent-sky-400"
+                      />
+                      <span>Select 14-Day Quick Sprint</span>
+                    </span>
+                  </div>
+                </div>
+
+                {/* Plan 2: Detailed Strategic Approach (Monthly Retainer) */}
+                <div
+                  onClick={() => setSelectedPlan("retainer")}
+                  className={`cursor-pointer p-6 sm:p-7 rounded-2xl border-2 transition relative flex flex-col justify-between ${
+                    selectedPlan === "retainer"
+                      ? "bg-slate-900 border-emerald-400 shadow-xl shadow-emerald-500/10 ring-1 ring-emerald-400"
+                      : "bg-slate-950/70 border-slate-800 hover:border-slate-700 opacity-80"
+                  }`}
+                >
+                  <div className="absolute -top-3 right-5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-400 text-slate-950 flex items-center gap-1">
+                    <Star className="w-3 h-3 fill-slate-950" />
+                    <span>Recommended for Scaling</span>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="px-2.5 py-1 rounded-md text-[11px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        Plan 2 • Detailed Approach
+                      </span>
+                      <span className="text-xs text-emerald-400 font-mono">Continuous Partner</span>
+                    </div>
+
+                    <div>
+                      <h4 className="text-lg font-bold text-white">Dedicated Tech Partner (Retainer)</h4>
+                      <p className="text-xs text-slate-400 mt-1">
+                        Full-stack re-architecture, custom DB/API schemas, and ongoing workflow automation.
+                      </p>
+                    </div>
+
+                    <div className="text-2xl font-black text-white">
+                      $2,500 <span className="text-xs text-slate-400 font-normal">/ mo (or ₹1,20,000/mo)</span>
+                    </div>
+
+                    <ul className="space-y-2 text-xs text-slate-300 pt-2 border-t border-slate-800">
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                        <span>Complete Next.js 15 App Router + RSC Migration</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                        <span>Custom DB Schemas (Drizzle ORM + Upstash Redis Cache)</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                        <span>Autonomous Event Pipelines (eliminating manual leaks)</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                        <span>Continuous Feature Sprints &amp; Priority Slack Channel</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="pt-5 mt-4 border-t border-slate-800/80">
+                    <span className={`text-xs font-semibold flex items-center gap-1.5 ${selectedPlan === "retainer" ? "text-emerald-400" : "text-slate-400"}`}>
+                      <input
+                        type="radio"
+                        name="plan"
+                        checked={selectedPlan === "retainer"}
+                        onChange={() => setSelectedPlan("retainer")}
+                        className="accent-emerald-400"
+                      />
+                      <span>Select Full Retainer Architecture</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* LEAD CAPTURE FORM */}
               {!leadUnlocked ? (
-                <form onSubmit={handleLeadSubmit} className="max-w-xl mx-auto space-y-4">
+                <form onSubmit={handleLeadSubmit} className="max-w-xl mx-auto space-y-4 pt-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <input
                       type="text"
@@ -610,6 +748,7 @@ export default function HomePage() {
                     required
                     className="w-full px-4 py-3 bg-slate-950/80 rounded-xl border border-slate-700 text-white placeholder-slate-500 text-xs focus:outline-none focus:border-emerald-500"
                   />
+
                   <button
                     type="submit"
                     disabled={isCapturing}
@@ -618,12 +757,14 @@ export default function HomePage() {
                     {isCapturing ? (
                       <>
                         <RefreshCw className="w-4 h-4 animate-spin text-slate-950" />
-                        <span>Compiling Blueprint...</span>
+                        <span>Compiling Personalized Strategy...</span>
                       </>
                     ) : (
                       <>
                         <Unlock className="w-4 h-4 text-slate-950" />
-                        <span>Unlock 14-Day Blueprint &amp; Detailed Roadmap</span>
+                        <span>
+                          Unlock Roadmap for {selectedPlan === "sprint" ? "14-Day Sprint (Simple)" : "Full Retainer (Detailed)"}
+                        </span>
                       </>
                     )}
                   </button>
@@ -639,7 +780,7 @@ export default function HomePage() {
                   </div>
                   <h4 className="text-lg font-bold text-white">Full Blueprint Unlocked!</h4>
                   <p className="text-xs text-slate-300">
-                    A copy has been queued for <strong className="text-white">{leadForm.email}</strong>. You can inspect the full 14-day production roadmap below or schedule your 15-minute engineer strategy review to implement it in a sprint.
+                    Your custom teardown for <strong className="text-white">{selectedPlan === "sprint" ? "14-Day Performance Sprint" : "Dedicated Retainer Architecture"}</strong> has been prepared for <strong className="text-white">{leadForm.email}</strong>.
                   </p>
                   <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
                     <a
@@ -662,13 +803,23 @@ export default function HomePage() {
                 </div>
               )}
 
-              {/* UNLOCKED 14-DAY ROADMAP VIEW */}
+              {/* UNLOCKED ROADMAP VIEW */}
               {leadUnlocked && (
                 <div className="mt-8 pt-8 border-t border-slate-800 space-y-4 text-left">
-                  <h4 className="text-base font-bold text-white flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-emerald-400" />
-                    <span>Your 14-Day Production Sprint Roadmap</span>
-                  </h4>
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-base font-bold text-white flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-emerald-400" />
+                      <span>
+                        {selectedPlan === "sprint"
+                          ? "14-Day Quick Performance Execution Roadmap"
+                          : "Full Retainer Architecture & Continuous Scaling Roadmap"}
+                      </span>
+                    </h4>
+                    <span className="text-xs font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300">
+                      {selectedPlan === "sprint" ? "Simple Approach" : "Detailed Approach"}
+                    </span>
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {auditResult.roadmap14Day.map((phase, idx) => (
                       <div key={idx} className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">

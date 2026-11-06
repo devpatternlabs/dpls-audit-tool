@@ -80,4 +80,5 @@ export interface LeadCapturePayload {
   auditId?: string;
   currentScore?: number;
   bottlenecks?: any[];
+  selectedPlan?: "sprint" | "retainer";
 }

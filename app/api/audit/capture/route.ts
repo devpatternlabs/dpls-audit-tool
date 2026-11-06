@@ -4,7 +4,7 @@ import type { LeadCapturePayload } from "@/types/audit";
 export async function POST(request: Request) {
   try {
     const body: LeadCapturePayload = await request.json();
-    const { name, email, url, company, currentScore, bottlenecks, auditId } = body;
+    const { name, email, url, company, currentScore, bottlenecks, auditId, selectedPlan } = body;
 
     if (!email || !url) {
       return NextResponse.json(
@@ -13,12 +13,18 @@ export async function POST(request: Request) {
       );
     }
 
+    const planLabel =
+      selectedPlan === "retainer"
+        ? "Plan 2: Dedicated Tech Partner (Monthly Retainer - Detailed Approach)"
+        : "Plan 1: 14-Day Performance Sprint (Simple Quick-Win Approach)";
+
     const leadInfo = {
       name: name || "Anonymous Founder/Lead",
       email: email.trim(),
       url: url.trim(),
       company: company || "N/A",
       auditId: auditId || "N/A",
+      selectedPlan: planLabel,
       currentScore: currentScore || "N/A",
       bottlenecksSummary: Array.isArray(bottlenecks)
         ? bottlenecks.map((b: any) => b.title || b).join(", ")
@@ -38,14 +44,15 @@ export async function POST(request: Request) {
             {
               title: "⚡ NEW HIGH-INTENT LEAD: Comparative Audit Unlocked",
               color: 0x10b981, // Emerald green
-              description: `Client requested full 14-day blueprint for **${leadInfo.url}**`,
+              description: `Client requested roadmap & blueprint for **${leadInfo.url}**`,
               fields: [
                 { name: "👤 Contact Name", value: leadInfo.name, inline: true },
                 { name: "📧 Work Email", value: leadInfo.email, inline: true },
                 { name: "🏢 Company", value: leadInfo.company, inline: true },
+                { name: "🎯 Selected Engagement Plan", value: leadInfo.selectedPlan, inline: false },
                 { name: "📉 Current Health Score", value: `${leadInfo.currentScore}/100 (DPLS Projected: 99/100)`, inline: false },
                 { name: "🚨 Detected Bottlenecks", value: leadInfo.bottlenecksSummary, inline: false },
-                { name: "🎯 Next Action", value: `Pitch 14-Day Production Sprint to ${leadInfo.email}`, inline: false }
+                { name: "💼 Pitch Action", value: `Approach ${leadInfo.email} with ${leadInfo.selectedPlan}`, inline: false }
               ],
               footer: { text: "Dev Pattern Labs | PatternAudit Engine" },
               timestamp: new Date().toISOString(),
@@ -61,7 +68,7 @@ export async function POST(request: Request) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          text: `🔥 *New Audit Lead Ready to Close!*\n*Email:* ${leadInfo.email}\n*Website:* ${leadInfo.url}\n*Score:* ${leadInfo.currentScore}/100 -> DPLS 99/100\n*Bottlenecks:* ${leadInfo.bottlenecksSummary}`,
+          text: `🔥 *New Audit Lead Ready to Close!*\n*Email:* ${leadInfo.email}\n*Website:* ${leadInfo.url}\n*Preferred Plan:* ${leadInfo.selectedPlan}\n*Score:* ${leadInfo.currentScore}/100 -> DPLS 99/100\n*Bottlenecks:* ${leadInfo.bottlenecksSummary}`,
         }),
       }).catch((err) => console.error("Slack dispatch error:", err));
     }
@@ -78,7 +85,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         success: true,
-        message: "Your executive blueprint and 14-day roadmap has been prepared.",
+        message: "Your executive blueprint and roadmap has been prepared.",
         unlocked: true,
       },
       { status: 200 }
