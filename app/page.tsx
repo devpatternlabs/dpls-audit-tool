@@ -21,6 +21,10 @@ import {
   Check,
   Download,
   Share2,
+  Monitor,
+  Smartphone,
+  Gauge,
+  Activity,
 } from "lucide-react";
 import ScoreDial from "@/components/ScoreDial";
 import { CALENDLY_URL, BRAND_NAME } from "@/lib/site";
@@ -28,6 +32,7 @@ import type { ComparativeAuditResult } from "@/types/audit";
 
 export default function HomePage() {
   const [url, setUrl] = useState("");
+  const [strategy, setStrategy] = useState<"desktop" | "mobile">("desktop");
   const [stack, setStack] = useState("nextjs");
   const [painPoint, setPainPoint] = useState("performance");
   const [isScanning, setIsScanning] = useState(false);
@@ -44,7 +49,7 @@ export default function HomePage() {
   const scanSteps = [
     "Pinging origin server & measuring Time-To-First-Byte (TTFB)...",
     "Inspecting DOM hydration, script bundles, and render-blocking tags...",
-    "Auditing Core Web Vitals (LCP, CLS, FCP) & SEO metadata...",
+    "Querying Core Web Vitals (FCP, LCP, TBT, CLS) & SEO metadata...",
     "Detecting workflow automation leaks & un-cached database queries...",
     "Synthesizing Dev Pattern Labs Re-Engineered Architecture Blueprint...",
   ];
@@ -68,7 +73,7 @@ export default function HomePage() {
       const res = await fetch("/api/audit/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, stack, primaryPain: painPoint }),
+        body: JSON.stringify({ url, stack, primaryPain: painPoint, strategy }),
       });
 
       const data = await res.json();
@@ -113,7 +118,6 @@ export default function HomePage() {
       const data = await res.json();
       if (res.ok && data.success) {
         setLeadUnlocked(true);
-        // Trigger celebratory confetti
         confetti({
           particleCount: 100,
           spread: 70,
@@ -193,12 +197,43 @@ export default function HomePage() {
             onSubmit={handleStartScan}
             className="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-2xl backdrop-blur-md space-y-4"
           >
+            {/* Strategy (Desktop vs Mobile) selector */}
+            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+              <span className="text-xs font-mono text-slate-400 uppercase tracking-wider">Device Form Factor</span>
+              <div className="inline-flex p-1 rounded-xl bg-slate-950 border border-slate-800 text-xs font-medium">
+                <button
+                  type="button"
+                  onClick={() => setStrategy("desktop")}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-lg transition ${
+                    strategy === "desktop"
+                      ? "bg-emerald-500 text-slate-950 font-bold shadow-sm"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  <Monitor className="w-3.5 h-3.5" />
+                  <span>Desktop</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStrategy("mobile")}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-lg transition ${
+                    strategy === "mobile"
+                      ? "bg-emerald-500 text-slate-950 font-bold shadow-sm"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  <Smartphone className="w-3.5 h-3.5" />
+                  <span>Mobile</span>
+                </button>
+              </div>
+            </div>
+
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
                 <Globe className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="https://yourproduct.com"
+                  placeholder="https://devpatternlabs.com"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   disabled={isScanning}
@@ -273,7 +308,7 @@ export default function HomePage() {
           <div className="mt-10 max-w-xl mx-auto p-6 rounded-2xl bg-slate-900/80 border border-slate-800 text-center space-y-4">
             <div className="flex items-center justify-center gap-3 text-emerald-400 font-mono text-xs">
               <RefreshCw className="w-4 h-4 animate-spin" />
-              <span>DIAGNOSING ARCHITECTURE &amp; METRICS</span>
+              <span>DIAGNOSING ARCHITECTURE &amp; METRICS ({strategy.toUpperCase()})</span>
             </div>
             <p className="text-white text-sm font-semibold">{scanSteps[scanStep]}</p>
             <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
@@ -291,7 +326,80 @@ export default function HomePage() {
             ============================================================== */}
         {auditResult && !isScanning && (
           <div className="mt-16 space-y-12">
-            {/* 1. OVERALL COMPARISON DIAL BANNER */}
+            {/* 1. OFFICIAL GOOGLE LIGHTHOUSE 4-CATEGORY BADGES */}
+            <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <Gauge className="w-4 h-4 text-emerald-400" />
+                  <span className="text-sm font-bold text-white">Google Lighthouse Verified Scores</span>
+                  <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300">
+                    {auditResult.strategy.toUpperCase()}
+                  </span>
+                </div>
+                <span className="text-xs text-slate-400">
+                  Target: <strong>{auditResult.domain}</strong>
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 text-center space-y-1">
+                  <span className={`text-3xl font-black ${auditResult.categories.performance >= 90 ? "text-emerald-400" : auditResult.categories.performance >= 80 ? "text-amber-400" : "text-rose-400"}`}>
+                    {auditResult.categories.performance}
+                  </span>
+                  <span className="block text-xs font-medium text-slate-300">Performance</span>
+                </div>
+                <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 text-center space-y-1">
+                  <span className={`text-3xl font-black ${auditResult.categories.accessibility >= 90 ? "text-emerald-400" : "text-amber-400"}`}>
+                    {auditResult.categories.accessibility}
+                  </span>
+                  <span className="block text-xs font-medium text-slate-300">Accessibility</span>
+                </div>
+                <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 text-center space-y-1">
+                  <span className={`text-3xl font-black ${auditResult.categories.bestPractices >= 90 ? "text-emerald-400" : "text-amber-400"}`}>
+                    {auditResult.categories.bestPractices}
+                  </span>
+                  <span className="block text-xs font-medium text-slate-300">Best Practices</span>
+                </div>
+                <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 text-center space-y-1">
+                  <span className={`text-3xl font-black ${auditResult.categories.seo >= 90 ? "text-emerald-400" : "text-amber-400"}`}>
+                    {auditResult.categories.seo}
+                  </span>
+                  <span className="block text-xs font-medium text-slate-300">SEO &amp; AEO</span>
+                </div>
+              </div>
+
+              {/* Core Web Vitals Real Metrics Strip */}
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 pt-2 border-t border-slate-800/80 text-center text-xs font-mono">
+                <div className="p-2 rounded bg-slate-950/50">
+                  <span className="text-[10px] text-slate-500 block">FCP</span>
+                  <span className="text-emerald-400 font-bold">{auditResult.coreWebVitals.fcp}</span>
+                </div>
+                <div className="p-2 rounded bg-slate-950/50">
+                  <span className="text-[10px] text-slate-500 block">LCP</span>
+                  <span className="text-emerald-400 font-bold">{auditResult.coreWebVitals.lcp}</span>
+                </div>
+                <div className="p-2 rounded bg-slate-950/50">
+                  <span className="text-[10px] text-slate-500 block">TBT</span>
+                  <span className={`${parseInt(auditResult.coreWebVitals.tbt) > 200 ? "text-amber-400" : "text-emerald-400"} font-bold`}>
+                    {auditResult.coreWebVitals.tbt}
+                  </span>
+                </div>
+                <div className="p-2 rounded bg-slate-950/50">
+                  <span className="text-[10px] text-slate-500 block">CLS</span>
+                  <span className="text-emerald-400 font-bold">{auditResult.coreWebVitals.cls}</span>
+                </div>
+                <div className="p-2 rounded bg-slate-950/50">
+                  <span className="text-[10px] text-slate-500 block">Speed Index</span>
+                  <span className="text-slate-300 font-bold">{auditResult.coreWebVitals.speedIndex}</span>
+                </div>
+                <div className="p-2 rounded bg-slate-950/50">
+                  <span className="text-[10px] text-slate-500 block">Server TTFB</span>
+                  <span className="text-sky-400 font-bold">{auditResult.coreWebVitals.ttfb}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 2. OVERALL COMPARISON DIAL BANNER */}
             <div className="p-6 sm:p-10 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl relative overflow-hidden">
               <div className="flex flex-col md:flex-row items-center justify-between gap-8">
                 {/* Current State Dial */}
@@ -300,10 +408,12 @@ export default function HomePage() {
                     score={auditResult.overallScoreCurrent}
                     label="Current Measured State"
                     grade={auditResult.gradeCurrent}
-                    theme="danger"
+                    theme={auditResult.overallScoreCurrent >= 85 ? "success" : "danger"}
                   />
                   <p className="text-xs text-slate-400 max-w-xs text-center md:text-left">
-                    Measurable drag detected in client hydration, bundle footprint, and origin server TTFB.
+                    {auditResult.overallScoreCurrent >= 85
+                      ? "Strong web engineering foundation. High-impact headroom exists to unlock 99/100 peak velocity."
+                      : "Measurable drag detected in client hydration, bundle footprint, and origin server TTFB."}
                   </p>
                 </div>
 
@@ -349,7 +459,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* 2. SIDE-BY-SIDE METRICS TEARDOWN */}
+            {/* 3. SIDE-BY-SIDE METRICS TEARDOWN */}
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
@@ -374,7 +484,7 @@ export default function HomePage() {
                       {/* Before vs After pill */}
                       <div className="grid grid-cols-2 gap-2 text-xs font-mono p-2.5 rounded-xl bg-slate-950/80 border border-slate-800">
                         <div>
-                          <span className="text-[10px] text-rose-400 block font-bold">CURRENT</span>
+                          <span className="text-[10px] text-slate-400 block font-bold">CURRENT</span>
                           <span className="font-bold text-slate-200">{m.currentValue}</span>
                         </div>
                         <div className="text-right border-l border-slate-800 pl-2">
@@ -392,12 +502,12 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* 3. CRITICAL BOTTLENECKS IDENTIFIED */}
+            {/* 4. CRITICAL BOTTLENECKS IDENTIFIED */}
             <div className="p-6 sm:p-8 rounded-3xl bg-slate-900/60 border border-slate-800 space-y-6">
               <div className="space-y-1">
-                <div className="inline-flex items-center gap-2 text-rose-400 text-xs font-mono">
-                  <AlertTriangle className="w-3.5 h-3.5" />
-                  <span>DIAGNOSTIC REPORT</span>
+                <div className="inline-flex items-center gap-2 text-amber-400 text-xs font-mono">
+                  <Activity className="w-3.5 h-3.5" />
+                  <span>DIAGNOSTIC BOTTLENECK REPORT</span>
                 </div>
                 <h3 className="text-xl font-bold text-white">Choke-Points Detected on {auditResult.domain}</h3>
               </div>
@@ -405,26 +515,26 @@ export default function HomePage() {
               <div className="space-y-4">
                 {auditResult.bottlenecks.map((b, idx) => (
                   <div key={idx} className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
-                    <div className="md:col-span-4 space-y-1">
+                    <div className="md:col-span-5 space-y-1">
                       <div className="flex items-center gap-2">
-                        <span className={`text-[10px] font-mono px-2 py-0.5 rounded ${b.impact === "Critical" ? "bg-rose-500/20 text-rose-300 border border-rose-500/30" : "bg-amber-500/20 text-amber-300 border border-amber-500/30"}`}>
+                        <span className={`text-[10px] font-mono px-2 py-0.5 rounded ${b.impact === "Critical" ? "bg-rose-500/20 text-rose-300 border border-rose-500/30" : b.impact === "High" ? "bg-amber-500/20 text-amber-300 border border-amber-500/30" : "bg-sky-500/20 text-sky-300 border border-sky-500/30"}`}>
                           {b.impact} Priority
                         </span>
                         <h4 className="text-sm font-bold text-white">{b.title}</h4>
                       </div>
-                      <p className="text-xs text-rose-300/80 pt-1">{b.currentIssue}</p>
+                      <p className="text-xs text-slate-300 pt-1 leading-relaxed">{b.currentIssue}</p>
                     </div>
 
-                    <div className="md:col-span-8 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20 text-xs text-slate-300 space-y-1">
+                    <div className="md:col-span-7 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20 text-xs text-slate-300 space-y-1">
                       <span className="text-[10px] font-mono text-emerald-400 font-bold uppercase tracking-wider block">Dev Pattern Labs Engineering Fix:</span>
-                      <p>{b.dplsFix}</p>
+                      <p className="leading-relaxed">{b.dplsFix}</p>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* 4. ARCHITECTURE STACK BLUEPRINT */}
+            {/* 5. ARCHITECTURE STACK BLUEPRINT */}
             <div className="p-6 sm:p-8 rounded-3xl bg-slate-900/60 border border-slate-800 space-y-6">
               <div className="space-y-1">
                 <div className="inline-flex items-center gap-2 text-sky-400 text-xs font-mono">
@@ -439,7 +549,7 @@ export default function HomePage() {
                   <thead>
                     <tr className="border-b border-slate-800 text-slate-400 font-mono">
                       <th className="py-3 px-4">System Layer</th>
-                      <th className="py-3 px-4 text-rose-400">Current Detected Pattern</th>
+                      <th className="py-3 px-4 text-slate-400">Current Detected Pattern</th>
                       <th className="py-3 px-4 text-emerald-400">DPLS Re-Engineered Architecture</th>
                       <th className="py-3 px-4 text-slate-400">Primary Benefit</th>
                     </tr>
@@ -458,7 +568,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* 5. 14-DAY ROADMAP & LEAD CAPTURE (PITCH & CLOSE) */}
+            {/* 6. 14-DAY ROADMAP & LEAD CAPTURE (PITCH & CLOSE) */}
             <div id="unlock-blueprint" className="p-6 sm:p-10 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-[#0c1424] border-2 border-emerald-500/40 shadow-2xl relative">
               <div className="max-w-2xl mx-auto text-center space-y-3 mb-8">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-mono font-semibold border border-emerald-500/30">

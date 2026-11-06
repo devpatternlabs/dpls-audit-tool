@@ -14,6 +14,8 @@ import {
   RefreshCw,
   Globe,
   Share2,
+  Gauge,
+  Activity,
 } from "lucide-react";
 import ScoreDial from "@/components/ScoreDial";
 import { CALENDLY_URL, BRAND_NAME } from "@/lib/site";
@@ -99,7 +101,7 @@ export default function ReportPage() {
               <span>{report.domain}</span>
             </h1>
             <p className="text-xs text-slate-400">
-              Scanned on {new Date(report.scannedAt).toLocaleDateString()} • Audit ID: <code className="text-slate-300 font-mono">{report.id}</code>
+              Scanned on {new Date(report.scannedAt).toLocaleDateString()} • Form Factor: <span className="font-mono text-slate-300 uppercase">{report.strategy}</span> • Audit ID: <code className="text-slate-300 font-mono">{report.id}</code>
             </p>
           </div>
 
@@ -121,7 +123,80 @@ export default function ReportPage() {
           </div>
         </div>
 
-        {/* COMPARISON DIAL BANNER */}
+        {/* 1. GOOGLE LIGHTHOUSE 4-CATEGORY SCORES */}
+        {report.categories && (
+          <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <Gauge className="w-4 h-4 text-emerald-400" />
+                <span className="text-sm font-bold text-white">Google Lighthouse Verified Scores</span>
+              </div>
+              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300">
+                {report.strategy ? report.strategy.toUpperCase() : "DESKTOP"}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 text-center space-y-1">
+                <span className={`text-3xl font-black ${report.categories.performance >= 90 ? "text-emerald-400" : report.categories.performance >= 80 ? "text-amber-400" : "text-rose-400"}`}>
+                  {report.categories.performance}
+                </span>
+                <span className="block text-xs font-medium text-slate-300">Performance</span>
+              </div>
+              <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 text-center space-y-1">
+                <span className={`text-3xl font-black ${report.categories.accessibility >= 90 ? "text-emerald-400" : "text-amber-400"}`}>
+                  {report.categories.accessibility}
+                </span>
+                <span className="block text-xs font-medium text-slate-300">Accessibility</span>
+              </div>
+              <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 text-center space-y-1">
+                <span className={`text-3xl font-black ${report.categories.bestPractices >= 90 ? "text-emerald-400" : "text-amber-400"}`}>
+                  {report.categories.bestPractices}
+                </span>
+                <span className="block text-xs font-medium text-slate-300">Best Practices</span>
+              </div>
+              <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 text-center space-y-1">
+                <span className={`text-3xl font-black ${report.categories.seo >= 90 ? "text-emerald-400" : "text-amber-400"}`}>
+                  {report.categories.seo}
+                </span>
+                <span className="block text-xs font-medium text-slate-300">SEO &amp; AEO</span>
+              </div>
+            </div>
+
+            {report.coreWebVitals && (
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 pt-2 border-t border-slate-800/80 text-center text-xs font-mono">
+                <div className="p-2 rounded bg-slate-950/50">
+                  <span className="text-[10px] text-slate-500 block">FCP</span>
+                  <span className="text-emerald-400 font-bold">{report.coreWebVitals.fcp}</span>
+                </div>
+                <div className="p-2 rounded bg-slate-950/50">
+                  <span className="text-[10px] text-slate-500 block">LCP</span>
+                  <span className="text-emerald-400 font-bold">{report.coreWebVitals.lcp}</span>
+                </div>
+                <div className="p-2 rounded bg-slate-950/50">
+                  <span className="text-[10px] text-slate-500 block">TBT</span>
+                  <span className={`${parseInt(report.coreWebVitals.tbt) > 200 ? "text-amber-400" : "text-emerald-400"} font-bold`}>
+                    {report.coreWebVitals.tbt}
+                  </span>
+                </div>
+                <div className="p-2 rounded bg-slate-950/50">
+                  <span className="text-[10px] text-slate-500 block">CLS</span>
+                  <span className="text-emerald-400 font-bold">{report.coreWebVitals.cls}</span>
+                </div>
+                <div className="p-2 rounded bg-slate-950/50">
+                  <span className="text-[10px] text-slate-500 block">Speed Index</span>
+                  <span className="text-slate-300 font-bold">{report.coreWebVitals.speedIndex}</span>
+                </div>
+                <div className="p-2 rounded bg-slate-950/50">
+                  <span className="text-[10px] text-slate-500 block">Server TTFB</span>
+                  <span className="text-sky-400 font-bold">{report.coreWebVitals.ttfb}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 2. COMPARISON DIAL BANNER */}
         <div className="p-6 sm:p-10 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl relative overflow-hidden">
           <div className="flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="flex-1 flex flex-col items-center md:items-start text-center md:text-left space-y-3">
@@ -129,10 +204,12 @@ export default function ReportPage() {
                 score={report.overallScoreCurrent}
                 label="Current Measured State"
                 grade={report.gradeCurrent}
-                theme="danger"
+                theme={report.overallScoreCurrent >= 85 ? "success" : "danger"}
               />
               <p className="text-xs text-slate-400 max-w-xs text-center md:text-left">
-                Significant bottlenecks in hydration latency, script execution, and origin TTFB.
+                {report.overallScoreCurrent >= 85
+                  ? "Strong base. Headroom exists to eliminate remaining TBT and achieve 99/100 peak velocity."
+                  : "Measurable bottlenecks detected in client hydration, bundle overhead, and response time."}
               </p>
             </div>
 
@@ -175,7 +252,7 @@ export default function ReportPage() {
           </div>
         </div>
 
-        {/* SIDE-BY-SIDE METRICS */}
+        {/* 3. SIDE-BY-SIDE METRICS */}
         <div className="space-y-4">
           <h3 className="text-xl font-bold text-white">Side-by-Side Architectural Metrics</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -189,7 +266,7 @@ export default function ReportPage() {
                   <h4 className="text-sm font-bold text-white mb-3">{m.name}</h4>
                   <div className="grid grid-cols-2 gap-2 text-xs font-mono p-2.5 rounded-xl bg-slate-950/80 border border-slate-800">
                     <div>
-                      <span className="text-[10px] text-rose-400 block font-bold">CURRENT</span>
+                      <span className="text-[10px] text-slate-400 block font-bold">CURRENT</span>
                       <span className="font-bold text-slate-200">{m.currentValue}</span>
                     </div>
                     <div className="text-right border-l border-slate-800 pl-2">
@@ -206,7 +283,41 @@ export default function ReportPage() {
           </div>
         </div>
 
-        {/* 14-DAY ROADMAP & CLOSING CALL */}
+        {/* 4. CHOKE-POINTS IDENTIFIED */}
+        {report.bottlenecks && report.bottlenecks.length > 0 && (
+          <div className="p-6 sm:p-8 rounded-3xl bg-slate-900/60 border border-slate-800 space-y-6">
+            <div className="space-y-1">
+              <div className="inline-flex items-center gap-2 text-amber-400 text-xs font-mono">
+                <Activity className="w-3.5 h-3.5" />
+                <span>DIAGNOSTIC BOTTLENECK REPORT</span>
+              </div>
+              <h3 className="text-xl font-bold text-white">Choke-Points Detected on {report.domain}</h3>
+            </div>
+
+            <div className="space-y-4">
+              {report.bottlenecks.map((b, idx) => (
+                <div key={idx} className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
+                  <div className="md:col-span-5 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[10px] font-mono px-2 py-0.5 rounded ${b.impact === "Critical" ? "bg-rose-500/20 text-rose-300 border border-rose-500/30" : b.impact === "High" ? "bg-amber-500/20 text-amber-300 border border-amber-500/30" : "bg-sky-500/20 text-sky-300 border border-sky-500/30"}`}>
+                        {b.impact} Priority
+                      </span>
+                      <h4 className="text-sm font-bold text-white">{b.title}</h4>
+                    </div>
+                    <p className="text-xs text-slate-300 pt-1 leading-relaxed">{b.currentIssue}</p>
+                  </div>
+
+                  <div className="md:col-span-7 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20 text-xs text-slate-300 space-y-1">
+                    <span className="text-[10px] font-mono text-emerald-400 font-bold uppercase tracking-wider block">Dev Pattern Labs Engineering Fix:</span>
+                    <p className="leading-relaxed">{b.dplsFix}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 5. 14-DAY ROADMAP & CLOSING CALL */}
         <div className="p-6 sm:p-10 rounded-3xl bg-slate-900/80 border border-slate-800 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-1">

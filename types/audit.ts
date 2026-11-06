@@ -32,15 +32,34 @@ export interface RoadmapPhase {
   deliverables: string[];
 }
 
+export interface LighthouseCategories {
+  performance: number;
+  accessibility: number;
+  bestPractices: number;
+  seo: number;
+}
+
+export interface CoreWebVitalsSummary {
+  fcp: string;
+  lcp: string;
+  tbt: string;
+  cls: string;
+  speedIndex: string;
+  ttfb: string;
+}
+
 export interface ComparativeAuditResult {
   id: string;
   url: string;
   domain: string;
+  strategy: "desktop" | "mobile";
   scannedAt: string;
   overallScoreCurrent: number;
   overallScoreDpls: number;
   gradeCurrent: string;
   gradeDpls: string;
+  categories: LighthouseCategories;
+  coreWebVitals: CoreWebVitalsSummary;
   businessImpact: {
     conversionLift: string;
     bounceRateReduction: string;
